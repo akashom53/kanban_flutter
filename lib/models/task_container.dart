@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 class TaskContainer {
   String title;
   String uid;
+  int index;
 
   List<Task> tasks = [];
 
@@ -13,6 +14,12 @@ class TaskContainer {
     @required this.title,
     @required this.uid,
   });
+
+  TaskContainer.fromMap(Map<String, dynamic> map) {
+    this.title = map['title'];
+    this.uid = map['uid'];
+    this.index = map['index'];
+  }
 
   @override
   bool operator ==(Object other) =>

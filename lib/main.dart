@@ -1,13 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drag_drop_test/db/db_manager.dart';
 import 'package:drag_drop_test/kanban_column.dart';
 import 'package:drag_drop_test/models/task.dart';
-import 'package:drag_drop_test/models/task.dart';
-import 'package:drag_drop_test/models/task.dart';
-import 'package:drag_drop_test/models/task.dart';
-import 'package:drag_drop_test/models/task.dart';
-import 'package:drag_drop_test/models/task.dart';
 import 'package:drag_drop_test/models/task_container.dart';
-import 'package:drag_drop_test/reorder_list.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -33,7 +28,8 @@ class MyApp extends StatelessWidget {
         future: _initialization,
         builder: (context, snapShot) {
           if (snapShot.hasError) return buildErrorPage();
-          if (snapShot.connectionState == ConnectionState.done) return buildApp();
+          if (snapShot.connectionState == ConnectionState.done)
+            return buildApp();
           return buuildLoading();
         },
       ),
@@ -59,9 +55,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<TaskContainer> _kanbanColumns = [];
-
   ScrollController _scrollController;
+  int _listSize = 0;
 
   @override
   void initState() {
@@ -113,6 +108,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    Future.delayed(Duration(seconds: 1), () {
+    });
     return Scaffold(
       appBar: AppBar(
         title: Text("Hello"),
@@ -120,39 +117,54 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
               icon: Icon(Icons.add),
               onPressed: () async {
-                DbManager.instance.fetchColumns();
                 final taskContainer = await showCreateColumnDialog(context);
                 if (taskContainer == null) return;
-                DbManager.instance.createTaskContainer(taskContainer);
-                setState(() {
-                  _kanbanColumns.add(taskContainer);
-                });
+                DbManager.instance
+                    .createTaskContainer(taskContainer, _listSize);
               }),
         ],
       ),
-      body: ListView(
-        controller: _scrollController,
-        scrollDirection: Axis.horizontal,
-        semanticChildCount: 5,
-        shrinkWrap: true,
-        children: _kanbanColumns
-            .map((kanban) => KanbanColumn(
-                  onScrollLeft: scrollLeft,
-                  list1: kanban,
-                  onScrollRight: scrollRight,
-                  onItemInserted: (Task item, int index) {
-                    setState(() {
-                      kanban.tasks.insert(index, item);
-                    });
-                  },
-                  onItemRemoved: (Task item) {
-                    setState(() {
-                      kanban.tasks.remove(item);
-                    });
-                  },
-                ))
-            .toList(),
-      ),
+      body: StreamBuilder<List<TaskContainer>>(
+          stream: DbManager.instance.allTaskColumnsStream,
+          builder: (context, snapshot) {
+            if (snapshot.data == null) return Container();
+            _listSize = snapshot.data.length;
+            // return Center(
+            //   child: FlatButton(child: Text("DElete"),onPressed: () async {
+            //     for (var data in snapshot.data) {
+            //       DbManager.instance.deleteAllTaskContainers(data.id);
+            //     }
+            //   },),
+            // );
+            return ListView(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              semanticChildCount: snapshot.data.length,
+              shrinkWrap: true,
+              children: snapshot.data
+                  .map((kanban) => KanbanColumn(
+                        onScrollLeft: scrollLeft,
+                        list1: kanban,
+                        onScrollRight: scrollRight,
+                        onItemInserted: (Task item, int index) {
+                          setState(() {
+                            // kanban.tasks.insert(index, item);
+                            item.containerId = kanban.uid;
+                            print("Added: ${item.uid} to ${kanban.uid} at $index");
+                            DbManager.instance.createTask(item, index);
+                          });
+                        },
+                        onItemRemoved: (Task item) {
+                          setState(() {
+                            print("Removed: ${item.uid}");
+                            // kanban.tasks.remove(item);
+                            DbManager.instance.deleteTask(item.uid);
+                          });
+                        },
+                      ))
+                  .toList(),
+            );
+          }),
     );
   }
 }

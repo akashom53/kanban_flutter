@@ -6,6 +6,7 @@ class Task {
   String uid;
   String containerId;
   bool ghost;
+  int index;
 
   Task({
     @required this.title,
@@ -13,6 +14,15 @@ class Task {
     @required this.uid,
     @required this.containerId,
   }) : ghost = false;
+
+  Task.fromMap(Map<String, dynamic> map) {
+    this.title = map['title'];
+    this.text = map['text'];
+    this.uid = map['uid'];
+    this.containerId = map['containerId'];
+    this.index = map['index'];
+    ghost = false;
+  }
 
   Task.ghost()
       : this.title = "",

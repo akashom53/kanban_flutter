@@ -113,10 +113,12 @@ class _KanbanColumnState extends State<KanbanColumn> {
                   onItemInserted: widget.onItemInserted,
                   onItemRemoved: widget.onItemRemoved,
                   onReorder: (item, index) {
-                    setState(() {
-                      widget.list1.tasks.remove(item);
-                      widget.list1.tasks.insert(index, item);
-                    });
+                    widget.onItemRemoved(item);
+                    widget.onItemInserted(item, index);
+                    // setState(() {
+                    //   widget.list1.tasks.remove(item);
+                    //   widget.list1.tasks.insert(index, item);
+                    // });
                   },
                   onScrollRight: widget.onScrollRight,
                 ),
